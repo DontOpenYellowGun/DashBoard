@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--空调面板自定义属性-->
+    <declare-styleable name="AirBoardView">
+        <!--中心圆-->
+        <attr name="centerCircleRadius" format="dimension" />
+        <attr name="centerCircleBackground" format="color" />
+
+        <!--环形进度-->
+        <attr name="progressWidth" format="dimension" />
+        <attr name="progressStartColor" format="color" />
+        <attr name="progressCenterColor" format="color" />
+        <attr name="progressEndColor" format="color" />
+        <attr name="progressBackgroundColor" format="color" />
+
+        <!--外部圆环-->
+        <attr name="outsideCircleRadius" format="dimension" />
+        <attr name="outsideCircleBackgroundColor" format="color" />
+
+        <!--温度显示-->
+        <attr name="tempTextColor" format="color" />
+        <attr name="tempTextSize" format="dimension" />
+
+        <!--刻度条-->
+        <attr name="scaleTextColor" format="float" />
+        <attr name="scaleTextSize" format="dimension" />
+
+        <attr name="tempStrArray" format="reference" />
+    </declare-styleable>
+
+</resources>
