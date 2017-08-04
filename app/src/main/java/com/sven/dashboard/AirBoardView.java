@@ -6,7 +6,6 @@ import android.animation.TimeInterpolator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -20,6 +19,9 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+
+import java.text.NumberFormat;
+import java.util.Arrays;
 
 /**
  * 文件描述：空调控制面板View
@@ -64,7 +66,7 @@ public class AirBoardView extends View {
     private Paint paintScaleText;
     private RectF rectF;
 
-    private int mWidth, mHight;
+    private int mWidth, mHeight;
     private float percent = 1.0f;
     private float oldPercent = 0f;
     private int START_ARC = 150;
@@ -77,8 +79,7 @@ public class AirBoardView extends View {
     TimeInterpolator interpolator = new SpringInterpolator();//动画插值器
     private int mCenterCircleX;
     private int mCenterCircleY;
-    private Region mRegion;
-    private Path ovalPath;
+    private String currentTemp;
 
 
     public AirBoardView(Context context) {
@@ -101,6 +102,12 @@ public class AirBoardView extends View {
         mContext = context;
         initAttr();
         initPaint();
+        initData();
+    }
+
+    private void initData() {
+
+
     }
 
 
@@ -225,49 +232,79 @@ public class AirBoardView extends View {
         mCenterCircleY = (getHeight() + getPaddingTop() - getPaddingBottom()) / 2;
 
         this.percent = percent / 100f;
-        canvas.translate(mWidth / 2, mHight / 2);//移动坐标原点到中心
+        canvas.translate(mWidth / 2, mHeight / 2);//移动坐标原点到中心
 
         drawOutCircle(canvas);//画外圆
         drawCenterCircle(canvas);//画外圆
         drawProgressBackground(canvas);//画进度条背景
         drawProgress(canvas, percent);//画进度条
         drawScale(canvas);
-
-
-//        ovalPath = new Path();
-//        //将画布的坐标原点移到圆心位置
-//        mRegion = new Region();
-//        ovalPath.moveTo(0, 0);
-//        ovalPath.lineTo(500, 0);
-////        RectF oval = new RectF(-(500), 500, 500, -(500));
-////        ovalPath.addArc(oval, 180, 90);
-////        ovalPath.lineTo(0, 0);
-//        ovalPath.close();
-//        RectF r = new RectF();
-//        ovalPath.computeBounds(r, true);
-//        mRegion.setPath(ovalPath, new Region((int) r.left, (int) r.top, (int) r.right, (int) r.bottom));
-//        Paint paint = new Paint();
-//        paint.setColor(Color.RED);
-//        paint.setAntiAlias(true);
-//        paint.setStrokeWidth(1);
-//        paint.setStyle(Paint.Style.STROKE);
-//        canvas.drawPath(ovalPath,paint);
-
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-//        float x;
-//        float y;
-//        switch (event.getAction()) {
-//            case MotionEvent.ACTION_DOWN:
-//                x = event.getX() - mCenterCircleX;
-//                y = event.getY() - mCenterCircleY;
-//                boolean b = mRegion.contains((int) x, (int) y);
-//                Log.e("onTouchEvent", "onTouchEvent: b: " + b + " x: " + x + "  y: " + y);
-//                break;
-//        }
+
+        if (event.getAction() == MotionEvent.ACTION_DOWN || event.getAction() == MotionEvent.ACTION_MOVE) {
+            float x = event.getX() - (mWidth / 2);
+            float y = event.getY() - (mHeight / 2);
+            float touchAngle = 0;
+            if (x < 0 && y < 0) {
+                touchAngle += 180;
+            } else if (y < 0 && x > 0) {
+                touchAngle += 360;
+            } else if (y > 0 && x < 0) {
+                touchAngle += 180;
+            }
+            Log.e("onTouchEvent", "touchAngle___1: " + touchAngle);
+            touchAngle += Math.toDegrees(Math.atan(y / x));
+            Log.e("onTouchEvent", "Math.atan(y/x: " + Math.atan(y / x));
+            Log.e("onTouchEvent", "touchAngle___2: " + touchAngle);
+            touchAngle = touchAngle - START_ARC;
+            Log.e("onTouchEvent", "touchAngle___3: " + touchAngle);
+            if (touchAngle < 0) {
+                touchAngle = touchAngle + 360;
+            }
+            float touchRadius = (float) Math.sqrt(y * y + x * x);//点击点距离圆心得距离
+            if (touchRadius < outsideCircleRadius) {
+                getCurrentTemp(touchAngle);
+            }
+            Log.e("onTouchEvent", "原始坐标__: " /*+ b*/ + " x: " + event.getX() + "  y: " + event.getX());
+            Log.e("onTouchEvent", "________: " /*+ b*/ + " x: " + x + "  y: " + y);
+            Log.e("onTouchEvent", "touchAngle___4: " /*+ b*/ + " touchAngle___: " + touchAngle);
+        } else if (event.getAction() == MotionEvent.ACTION_UP) {
+            if (onAirClickListener != null) {
+                onAirClickListener.onAirClick(currentTemp);
+            }
+        }
         return true;
+    }
+
+    private void getCurrentTemp(float touchAngle) {
+
+        int SPACE_COUNT = tempStrArray.length + 1;//一共多少个区间
+        int SPACE_ARC = DURING_ARC / (SPACE_COUNT);//每个区间的的角度
+
+        float[] spaces = new float[SPACE_COUNT + 1];//所有的区间角度
+        float f = 0;
+        spaces[0] = 0;
+        for (int i = 1; i < SPACE_COUNT + 1; i++) {
+            f += SPACE_ARC;
+            spaces[i] = f;
+        }
+        for (int i = 0; i < SPACE_COUNT; i++) {
+            if (touchAngle > spaces[i] && touchAngle < spaces[i + 1]) {
+                if (i < 14) {
+                    currentTemp = String.valueOf(tempStrArray[i]);
+                    percent = (i / (tempStrArray.length - 1 + 1f)) * 100;
+                    invalidate();
+                } else if (i == 14) {
+                    currentTemp = String.valueOf(tempStrArray[14]);
+                    percent = 100;
+                    invalidate();
+                }
+                Log.e("currentTemp", currentTemp);
+            }
+        }
     }
 
     private void setAnimator(final float percent) {
@@ -310,7 +347,7 @@ public class AirBoardView extends View {
     private void drawScale(Canvas canvas) {
         canvas.save(); //记录画布状态
         canvas.rotate(-(180 - START_ARC + 90), 0, 0);
-        int numY = -((mHight / 2)) + DensityUtils.dip2px(22);
+        int numY = -((mHeight / 2)) + DensityUtils.dip2px(22);
         float rAngle = DURING_ARC / tempStrArray.length + 1; //每个区间需要转动的角度
         for (int i = 0; i < tempStrArray.length; i++) {
             canvas.save(); //记录画布状态
@@ -389,8 +426,8 @@ public class AirBoardView extends View {
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         Log.e("onSizeChanged", String.valueOf(w) + String.valueOf(h) + String.valueOf(oldw) + String.valueOf(oldh));
-        mWidth = getWidth();
-        mHight = getHeight();
+        mWidth = w;
+        mHeight = h;
         initShader();
     }
 
@@ -399,8 +436,17 @@ public class AirBoardView extends View {
         setAnimator(percent);
     }
 
-    public void getTemp() {
+    private OnAirClickListener onAirClickListener;
 
+    public interface OnAirClickListener {
+        void onAirClick(String temp);
+    }
 
+    public OnAirClickListener getOnAirClickListener() {
+        return onAirClickListener;
+    }
+
+    public void setOnAirClickListener(OnAirClickListener onAirClickListener) {
+        this.onAirClickListener = onAirClickListener;
     }
 }

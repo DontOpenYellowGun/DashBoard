@@ -4,6 +4,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.SeekBar;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -15,24 +16,12 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         airview = (AirBoardView) findViewById(R.id.airView);
-
-        SeekBar seekBar = (SeekBar) findViewById(R.id.seekBar);
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        airview.setOnAirClickListener(new AirBoardView.OnAirClickListener() {
             @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                Log.e("onProgressChanged", String.valueOf(progress));
-                airview.setPercent(progress);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
+            public void onAirClick(String temp) {
+                Toast.makeText(MainActivity.this, temp, Toast.LENGTH_SHORT).show();
             }
         });
+
     }
 }
